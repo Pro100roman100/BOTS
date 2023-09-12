@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "discord.js": "^14.13.0",
+    "oidc-provider": "^8.3.2",
+    "steamapi": "^2.4.2"
+  },
+  "main": "index.js"
+}
