@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const { steamApi } = require('C:\\UA_Rozvidka\\config.json');
 const steam = new SteamAPI(steamApi);
 
+const bannedGames = ["Cookie Clicker"];
+
 async function getUserSteamId(userId, callback) {
 
     fs.readFile('C:\\UA_Rozvidka\\database.json', function (err, data) {
@@ -54,7 +56,7 @@ module.exports = {
                 idPromise.then(async result => {
                     const id = result;
                 
-                    var statPromise = steam.getUserRecentGames(id, 5);
+                    var statPromise = steam.getUserRecentGames(id, 6);
                     statPromise.then(async result => {
                         const stat = result;
 
@@ -68,8 +70,17 @@ module.exports = {
                             else if (stat.length > 1)
                                 reply += `Гравець ${summary.nickname} найбільше за недавній час задротив у \n`;
     
+                            let n = 0;
                             stat.forEach(element => {
-                                reply += `\n${element.name} (${Math.round(element.playTime2 / 6) / 10}год), \n`
+                                isBanned = false;
+                                bannedGames.forEach(game => {
+                                    if (element.name == game)
+                                        isBanned = true
+                                });
+                                if (!isBanned && n < 5) {
+                                    n++;
+                                    reply += `\n${element.name} (${Math.round(element.playTime2 / 6) / 10}год)${n == 5 ? "" : ", "}\n`;
+                                }
                             });
 
                             await interaction.reply({ content: reply});
