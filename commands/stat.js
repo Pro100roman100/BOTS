@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const SteamAPI = require('steamapi');
+import SteamAPI from "module";
 const fs = require('node:fs');
 const { steamApi } = require('C:\\UA_Rozvidka\\config.json');
 const steam = new SteamAPI(steamApi);

@@ -1,6 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
 const fs = require('node:fs');
-const { json } = require('node:stream/consumers');
  
 async function readUser (userId, callback) {
 	fs.readFile('database.json', function (err, data) {
