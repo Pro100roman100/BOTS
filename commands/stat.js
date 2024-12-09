@@ -1,14 +1,14 @@
-const { SlashCommandBuilder } = require('discord.js');
-import SteamAPI from "module";
-const fs = require('node:fs');
-const { steamApi } = require('C:\\UA_Rozvidka\\config.json');
-const steam = new SteamAPI(steamApi);
+import { SlashCommandBuilder } from 'discord.js';
+import SteamAPI from "steamapi";
+import { readFile } from 'node:fs';
+import config from '../config.json' with {type: 'json'};
+const steam = new SteamAPI(config.steamApi);
 
 const bannedGames = ["Cookie Clicker"];
 
 async function getUserSteamId(userId, callback) {
 
-    fs.readFile('C:\\UA_Rozvidka\\database.json', function (err, data) {
+    readFile('C:\\UA_Rozvidka\\database.json', function (err, data) {
         if (err) throw err;
 
         endData = JSON.parse(data);
@@ -27,70 +27,67 @@ async function getUserSteamId(userId, callback) {
     });
 }
 
-module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('stat')
-		.setDescription('показує статистику гравця')
-        .addUserOption( user =>
-            user.setName('користувач')
-			.setDescription('до кого примінити команду')
-			.setRequired(true)
-        ),
-	async execute(interaction) {
-		const target = interaction.options.getUser('користувач');
-        
-        try {
-            getUserSteamId(target, async url => {
+export const data = new SlashCommandBuilder()
+    .setName('stat')
+    .setDescription('показує статистику гравця')
+    .addUserOption(user => user.setName('користувач')
+        .setDescription('до кого примінити команду')
+        .setRequired(true)
+    );
+export async function execute(interaction) {
+    const target = interaction.options.getUser('користувач');
 
-                if(url === null) {
-                    await interaction.reply({
-                        content: `Цей користувач не зареєстрований`,
-                        ephemeral: true
-                    })
+    try {
+        getUserSteamId(target, async (url) => {
 
-                    return;
-                }
+            if (url === null) {
+                await interaction.reply({
+                    content: `Цей користувач не зареєстрований`,
+                    ephemeral: true
+                });
 
-                var idPromise = steam.resolve(url);
+                return;
+            }
 
-                idPromise.then(async result => {
-                    const id = result;
-                
-                    var statPromise = steam.getUserRecentGames(id, 6);
-                    statPromise.then(async result => {
-                        const stat = result;
+            var idPromise = steam.resolve(url);
 
-                        steam.getUserSummary(id).then(async summary => {
-                        
-                            var reply = ``;
-                            if (stat.length == 0)
-                                reply += `Гравець ${summary.nickname} за недавній час не задротив в нічого`;
-                            else if (stat.length == 1)
-                                reply += `Гравець ${summary.nickname} за недавній час задротив у \n`;
-                            else if (stat.length > 1)
-                                reply += `Гравець ${summary.nickname} найбільше за недавній час задротив у \n`;
-    
-                            let n = 0;
-                            stat.forEach(element => {
-                                isBanned = false;
-                                bannedGames.forEach(game => {
-                                    if (element.name == game)
-                                        isBanned = true
-                                });
-                                if (!isBanned && n < 5) {
-                                    n++;
-                                    reply += `\n${element.name} (${Math.round(element.playTime2 / 6) / 10}год)${n == 5 ? "" : ", "}\n`;
-                                }
+            idPromise.then(async (result) => {
+                const id = result;
+
+                var statPromise = steam.getUserRecentGames(id, 6);
+                statPromise.then(async (result) => {
+                    const stat = result;
+
+                    steam.getUserSummary(id).then(async (summary) => {
+
+                        var reply = ``;
+                        if (stat.length == 0)
+                            reply += `Гравець ${summary.nickname} за недавній час не задротив в нічого`;
+                        else if (stat.length == 1)
+                            reply += `Гравець ${summary.nickname} за недавній час задротив у \n`;
+                        else if (stat.length > 1)
+                            reply += `Гравець ${summary.nickname} найбільше за недавній час задротив у \n`;
+
+                        let n = 0;
+                        stat.forEach(element => {
+                            isBanned = false;
+                            bannedGames.forEach(game => {
+                                if (element.name == game)
+                                    isBanned = true;
                             });
-
-                            await interaction.reply({ content: reply});
+                            if (!isBanned && n < 5) {
+                                n++;
+                                reply += `\n${element.name} (${Math.round(element.playTime2 / 6) / 10}год)${n == 5 ? "" : ", "}\n`;
+                            }
                         });
+
+                        await interaction.reply({ content: reply });
                     });
                 });
             });
-        }
-        catch(e) {
-            console.log(e);
-        }
-	},
-};
+        });
+    }
+    catch (e) {
+        console.log(e);
+    }
+}
