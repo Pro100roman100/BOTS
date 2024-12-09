@@ -8,10 +8,10 @@ const bannedGames = ["Cookie Clicker"];
 
 async function getUserSteamId(userId, callback) {
 
-    readFile('C:\\UA_Rozvidka\\database.json', function (err, data) {
+    readFile('./database.json', function (err, data) {
         if (err) throw err;
 
-        endData = JSON.parse(data);
+        var endData = JSON.parse(data);
 
         var found = false;
         endData.users.forEach(element => {
@@ -70,14 +70,14 @@ export async function execute(interaction) {
 
                         let n = 0;
                         stat.forEach(element => {
-                            isBanned = false;
+                            let isBanned = false;
                             bannedGames.forEach(game => {
-                                if (element.name == game)
+                                if (element.game.name == game)
                                     isBanned = true;
                             });
                             if (!isBanned && n < 5) {
                                 n++;
-                                reply += `\n${element.name} (${Math.round(element.playTime2 / 6) / 10}год)${n == 5 ? "" : ", "}\n`;
+                                reply += `\n${element.game.name} (${Math.round(element.recentMinutes / 6) / 10}год)${n == 5 ? "" : ", "}\n`;
                             }
                         });
 

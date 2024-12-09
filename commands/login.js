@@ -5,9 +5,9 @@ async function readUser (userId, callback) {
 	readFile('database.json', function (err, data) {
 		if (err) throw err;
 	
-		data = JSON.parse(data);
+		var data = JSON.parse(data);
 
-		isInBase = false;
+		var isInBase = false;
 		data.users.forEach(element => {
 			if(element.userId == userId && !isInBase) {
 				callback(true);

@@ -8,26 +8,26 @@ const steam = new SteamAPI(config.steamApi);
 const bannedGames = ["Cookie Clicker","Half-Life","Crossout", "Borderlands 2 RU",
     "Blender","Tom Clancy's Rainbow Six Siege - Test Server","Wallpaper Engine", "Wreckfest Throw-A-Santa + Sneak Peek 2.0"];
 
-async function getUserSteamId(userId, callback) {
+    async function getUserSteamId(userId, callback) {
 
-    readFile('C:\\UA_Rozvidka\\database.json', function (err, data) {
-        if (err) throw err;
-
-        endData = JSON.parse(data);
-
-        var found = false;
-        endData.users.forEach(element => {
-            if(Number(element.userId) == userId) {
-                callback(element.steamId);
-
-                found = true;
-            }
+        readFile('./database.json', function (err, data) {
+            if (err) throw err;
+    
+            var endData = JSON.parse(data);
+    
+            var found = false;
+            endData.users.forEach(element => {
+                if(Number(element.userId) == userId) {
+                    callback(element.steamId);
+    
+                    found = true;
+                }
+            });
+    
+            if (!found)
+                callback(null);
         });
-
-        if (!found)
-            callback(null);
-    });
-}
+    }
 
 export const data = new SlashCommandBuilder()
     .setName('roll')
@@ -58,7 +58,7 @@ export async function execute(interaction) {
                 idPromise.then(async (result) => {
                     const id = result;
 
-                    friendGames = steam.getUserOwnedGames(id);
+                    friendGames = steam.getUserOwnedGames(id, {includeAppInfo: true});
                 });
             });
         }
@@ -83,13 +83,13 @@ export async function execute(interaction) {
             idPromise.then(async (result) => {
                 const id = result;
 
-                var getGames = steam.getUserOwnedGames(id);
+                var getGames = steam.getUserOwnedGames(id, {includeAppInfo: true});
                 getGames.then(async (result) => {
                     var games = result;
                     games = games.filter(game => {
-                        banned = false;
+                        var banned = false;
                         bannedGames.forEach(bannedGame => {
-                            if (game.name == bannedGame)
+                            if (game.game.name == bannedGame)
                                 banned = true;
                         });
                         return !banned;
@@ -102,17 +102,17 @@ export async function execute(interaction) {
                             var combinedGames = [];
                             friendGames.forEach(friendGame => {
                                 games.forEach(game => {
-                                    if (friendGame.name == game.name)
+                                    if (friendGame.game.name == game.game.name)
                                         combinedGames.push(game);
                                 });
                             });
-                            console.log(combinedGames.map(game => { return game.name; }).toString());
+                            //console.log(combinedGames.map(game => { return game.name; }).toString());
 
                             const random = Math.floor(Math.random() * combinedGames.length);
                             const game = combinedGames[random];
 
                             var reply = ``;
-                            reply += `Карти показують що ${target} з ${friendTarget} хочуть пограти у ${game.name}`;
+                            reply += `Карти показують що ${target} з ${friendTarget} хочуть пограти у ${game.game.name}`;
 
                             await interaction.reply({ content: reply });
                         });
@@ -122,7 +122,7 @@ export async function execute(interaction) {
                         const game = games[random];
 
                         var reply = ``;
-                        reply += `Карти показують що ти хочеш пограти у ${game.name}`;
+                        reply += `Карти показують що ти хочеш пограти у ${game.game.name}`;
 
                         await interaction.reply({ content: reply });
                     }
