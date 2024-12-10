@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder,  ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { readFile, writeFile } from 'node:fs';
  
 async function readUser (userId, callback) {
@@ -32,7 +32,35 @@ async function writeUser (userId, url) {
 		});
 	});
 }
+async function deleteUser (userId) {
+	readFile('database.json', function (err, data) {
+		if (err) throw err;
+	
+		data = JSON.parse(data);
+		data.users = data.users.filter(user => user.userId != userId)
+		data = JSON.stringify(data);
 
+		writeFile('database.json', data, err => {
+			if (err) throw err;
+		});
+	});
+}
+async function changeUser (userId, newSteamId) {
+	readFile('database.json', function (err, data) {
+		if (err) throw err;
+	
+		data = JSON.parse(data);
+		var newData = data.users.filter(user => user.userId == userId)[0];
+		newData.steamId = newSteamId;
+		data.users = data.users.filter(user => user.userId != userId)
+		data.users.push(newData);
+		data = JSON.stringify(data);
+
+		writeFile('database.json', data, err => {
+			if (err) throw err;
+		});
+	});
+}
 export const data = new SlashCommandBuilder()
 	.setName('login')
 	.setDescription('Приєднати аккаунт Steam до профілю')
@@ -53,7 +81,39 @@ export async function execute(interaction) {
 
 	readUser(user, async (logged) => {
 		if (logged) {
-			await interaction.reply({ content: 'Ви вже зареєстровані', ephemeral: true });
+			const change = new ButtonBuilder()
+			.setCustomId('change')
+			.setLabel('Змінити профіль')
+			.setEmoji('1148862811414482975')
+			.setStyle(ButtonStyle.Secondary);
+
+			const SteamID = new ButtonBuilder()
+			.setCustomId('delete')
+			.setLabel('Видалити профіль')
+			.setEmoji('💀')
+			.setStyle(ButtonStyle.Danger);
+			
+			const row = new ActionRowBuilder()
+			.addComponents(change, SteamID);
+			
+			const response = await interaction.reply({ content: 'Ви вже зареєстровані', ephemeral: true, components: [row] });
+
+			const collectorFilter = i => i.user.id === interaction.user.id;
+			try {
+				const confirmation = await response.awaitMessageComponent({ filter: collectorFilter, time: 60000});
+				if(confirmation.customId == 'change') {
+					const url = interaction.options.getString('url');
+					changeUser(user, url);
+					await interaction.editReply({ content: 'Профіль зміннено на ' + url, components: [] });
+				}
+				else if (confirmation.customId == 'delete') {
+					deleteUser(user);
+					await interaction.editReply({ content: 'Профіль видалено', components: [] });
+				}
+			} catch (e) {
+				console.log(e);
+				await interaction.editReply({ content: 'Час вийшов', components: [] });
+			}
 		}
 		else {
 			const url = interaction.options.getString('url');
